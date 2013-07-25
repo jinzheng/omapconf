@@ -41,8 +41,9 @@
  *
  */
 
-
 #include <temp54xx.h>
+#include <hwtemp54xx.h>
+#include <ctrlmod_core54xx-defs.h>
 #include <cpuinfo.h>
 #include <lib.h>
 #include <autoadjust_table.h>
@@ -52,7 +53,6 @@
 #include <string.h>
 #include <emif.h>
 
-
 /* #define TEMP54XX_DEBUG */
 #ifdef TEMP54XX_DEBUG
 #define dprintf(format, ...)	 printf(format, ## __VA_ARGS__)
@@ -60,20 +60,18 @@
 #define dprintf(format, ...)
 #endif
 
-
-const char *temp54xx_sensor_names[TEMP54XX_ID_MAX + 1] = {
-	"MPU",
-	"Hotspot MPU",
-	"GPU",
-	"Hotspot GPU",
-	"CORE",
-	"EMIF1",
-	"EMIF2",
-	"PCB",
-	"CASE",
-	"CHARGER",
-	"FIXME"};
-
+const char *temp54xx_sensor_names[TEMP54XX_ID_MAX + 1] =
+{ "MPU",
+		"Hotspot MPU",
+		"GPU",
+		"Hotspot GPU",
+		"CORE",
+		"EMIF1",
+		"EMIF2",
+		"PCB",
+		"CASE",
+		"CHARGER",
+		"FIXME" };
 
 /* ------------------------------------------------------------------------*//**
  * @FUNCTION		temp54xx_name_get
@@ -91,7 +89,6 @@ const char *temp54xx_name_get(temp54xx_sensor_id id)
 	return temp54xx_sensor_names[id];
 }
 
-
 /* ------------------------------------------------------------------------*//**
  * @FUNCTION		voltdm2sensor_id
  * @BRIEF		convert voltage domain ID to sensor domain ID
@@ -102,11 +99,8 @@ const char *temp54xx_name_get(temp54xx_sensor_id id)
  *//*------------------------------------------------------------------------ */
 temp54xx_sensor_id voltdm2sensor_id(voltdm54xx_id vdd_id)
 {
-	static const temp54xx_sensor_id voltdm2sensor_map[VDD54XX_ID_MAX] = {
-		TEMP54XX_ID_MAX,
-		TEMP54XX_MPU,
-		TEMP54XX_GPU,
-		TEMP54XX_CORE};
+	static const temp54xx_sensor_id voltdm2sensor_map[VDD54XX_ID_MAX] =
+	{ TEMP54XX_ID_MAX, TEMP54XX_MPU, TEMP54XX_GPU, TEMP54XX_CORE };
 
 	CHECK_ARG_LESS_THAN(vdd_id, VDD54XX_ID_MAX, TEMP54XX_ID_MAX);
 
@@ -115,81 +109,73 @@ temp54xx_sensor_id voltdm2sensor_id(voltdm54xx_id vdd_id)
 
 
 
-/* ------------------------------------------------------------------------*//**
- * @FUNCTION		temp54xx_get
- * @BRIEF		return temperature measured by selected sensor
- *			(in degrees celcius)
- * @RETURNS		measured temperature in case of success
- *			TEMP_ABSOLUTE_ZERO (-273) in case of error
- * @param[in]		id: ADC temperature sensor id
- * @param[in, out]	temp: temperature (Celcius, min) (returned)
- * @DESCRIPTION		return temperature measured by selected sensor
- *			(in degrees celcius)
- *//*------------------------------------------------------------------------ */
 int temp54xx_get(temp54xx_sensor_id id)
 {
 	int temp, ret;
 	char line[256];
 	unsigned int i;
 	FILE *fp = NULL;
-	static const char *sensor_filenames1[TEMP54XX_ID_MAX] = {
-		"/sys/kernel/debug/thermal_debug/devices/omap_cpu_sensor/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/omap_cpu_governor/hotspot_temp",
-		"/sys/kernel/debug/thermal_debug/devices/omap_gpu_sensor/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/omap_gpu_governor/hotspot_temp",
-		"/sys/kernel/debug/thermal_debug/devices/omap_core_sensor/temperature",
-		"/sys/kernel/debug/emif.1/mr4",
-		"/sys/kernel/debug/emif.2/mr4",
-		"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.72/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/tmp006_sensor/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.73/temperature"};
-	static const char *sensor_filenames2[TEMP54XX_ID_MAX] = {
-		"/sys/devices/platform/omap/omap_temp_sensor.0/temp1_input",
-		"/sys/kernel/debug/thermal_debug/devices/omap_cpu_governor/hotspot_temp",
-		"/sys/devices/platform/omap/omap_temp_sensor.1/temp1_input",
-		"/sys/kernel/debug/thermal_debug/devices/omap_gpu_governor/hotspot_temp",
-		"/sys/devices/platform/omap/omap_temp_sensor.2/temp1_input",
-		"/sys/kernel/debug/emif.1/mr4",
-		"/sys/kernel/debug/emif.2/mr4",
-		"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.72/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/tmp006_sensor/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.73/temperature"};
-	static const char *sensor_filenames3[TEMP54XX_ID_MAX] = {
-		"/sys/devices/platform/omap/omap4plus_scm.0/temp_sensor_hwmon.0/temp1_input",
-		"/sys/kernel/debug/thermal_debug/devices/omap_cpu_governor/hotspot_temp",
-		"/sys/devices/platform/omap/omap4plus_scm.0/temp_sensor_hwmon.1/temp1_input",
-		"/sys/kernel/debug/thermal_debug/devices/omap_gpu_governor/hotspot_temp",
-		"/sys/devices/platform/omap/omap4plus_scm.0/temp_sensor_hwmon.2/temp1_input",
-		"/sys/kernel/debug/emif.1/mr4",
-		"/sys/kernel/debug/emif.2/mr4",
-		"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.72/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/tmp006_sensor/temperature",
-		"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.73/temperature"};
-	static const char **sensor_filenames_list[3] = {
-		sensor_filenames1,
-		sensor_filenames2,
-		sensor_filenames3};
+	static const char *sensor_filenames1[TEMP54XX_ID_MAX] =
+			{
+					"/sys/kernel/debug/thermal_debug/devices/omap_cpu_sensor/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/omap_cpu_governor/hotspot_temp",
+					"/sys/kernel/debug/thermal_debug/devices/omap_gpu_sensor/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/omap_gpu_governor/hotspot_temp",
+					"/sys/kernel/debug/thermal_debug/devices/omap_core_sensor/temperature",
+					"/sys/kernel/debug/emif.1/mr4",
+					"/sys/kernel/debug/emif.2/mr4",
+					"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.72/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/tmp006_sensor/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.73/temperature" };
+	static const char *sensor_filenames2[TEMP54XX_ID_MAX] =
+			{ "/sys/devices/platform/omap/omap_temp_sensor.0/temp1_input",
+					"/sys/kernel/debug/thermal_debug/devices/omap_cpu_governor/hotspot_temp",
+					"/sys/devices/platform/omap/omap_temp_sensor.1/temp1_input",
+					"/sys/kernel/debug/thermal_debug/devices/omap_gpu_governor/hotspot_temp",
+					"/sys/devices/platform/omap/omap_temp_sensor.2/temp1_input",
+					"/sys/kernel/debug/emif.1/mr4",
+					"/sys/kernel/debug/emif.2/mr4",
+					"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.72/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/tmp006_sensor/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.73/temperature" };
+	static const char *sensor_filenames3[TEMP54XX_ID_MAX] =
+			{
+					"/sys/devices/platform/omap/omap4plus_scm.0/temp_sensor_hwmon.0/temp1_input",
+					"/sys/kernel/debug/thermal_debug/devices/omap_cpu_governor/hotspot_temp",
+					"/sys/devices/platform/omap/omap4plus_scm.0/temp_sensor_hwmon.1/temp1_input",
+					"/sys/kernel/debug/thermal_debug/devices/omap_gpu_governor/hotspot_temp",
+					"/sys/devices/platform/omap/omap4plus_scm.0/temp_sensor_hwmon.2/temp1_input",
+					"/sys/kernel/debug/emif.1/mr4",
+					"/sys/kernel/debug/emif.2/mr4",
+					"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.72/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/tmp006_sensor/temperature",
+					"/sys/kernel/debug/thermal_debug/devices/tmp102_temp_sensor.73/temperature" };
+	static const char **sensor_filenames_list[3] =
+	{ sensor_filenames1, sensor_filenames2, sensor_filenames3 };
 
 	CHECK_CPU(54xx, TEMP_ABSOLUTE_ZERO);
 	CHECK_ARG_LESS_THAN(id, TEMP54XX_ID_MAX, TEMP_ABSOLUTE_ZERO);
 
 	/* Open file exported by temp. sensor driver (if loaded) */
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
+	{
 		dprintf("%s(): i=%u id=%u filename=%s\n", __func__, i, id,
-			(char *) sensor_filenames_list[i][id]);
+				(char *) sensor_filenames_list[i][id]);
 		fp = fopen((char *) sensor_filenames_list[i][id], "r");
 		if (fp != NULL)
 			break;
 	}
-	if (fp == NULL) {
+	if (fp == NULL)
+	{
 		dprintf("%s(): could not open %s file!\n", __func__,
-			temp54xx_name_get(id));
+				temp54xx_name_get(id));
 		temp = TEMP_ABSOLUTE_ZERO;
 		goto temp54xx_get_end;
 	}
 
 	/* Read file */
-	if (fgets(line, 256, fp) == NULL) {
+	if (fgets(line, 256, fp) == NULL)
+	{
 		fclose(fp);
 		dprintf("%s(): fgets() returned NULL!\n", __func__);
 		temp = TEMP_ABSOLUTE_ZERO;
@@ -200,34 +186,41 @@ int temp54xx_get(temp54xx_sensor_id id)
 	/* Remove endind '\n' */
 	line[strlen(line) - 1] = '\0';
 	dprintf("%s(): line=%s len=%u\n", __func__, line, strlen(line));
-	if ((id != TEMP54XX_EMIF1) && (id != TEMP54XX_EMIF2)) {
+	if ((id != TEMP54XX_EMIF1) && (id != TEMP54XX_EMIF2))
+	{
 		/* Retrieve temperature, in millidegrees celcius */
 		ret = sscanf(line, "%d", &temp);
-		if (ret != 1) {
+		if (ret != 1)
+		{
 			dprintf("%s(): sscanf() returned %d!\n", __func__, ret);
 			temp = TEMP_ABSOLUTE_ZERO;
 			goto temp54xx_get_end;
 		}
 
 		temp = temp / 1000; /* convert to degrees */
-	} else {
+	}
+	else
+	{
 		/* Retrieve temperature as MR4 code */
 		ret = sscanf(line, "MR4=%d", &temp);
-		if (ret != 1) {
+		if (ret != 1)
+		{
 			dprintf("%s(): sscanf() returned %d!\n", __func__, ret);
 			temp = TEMP_ABSOLUTE_ZERO;
 			goto temp54xx_get_end;
 		}
 	}
 
-temp54xx_get_end:
-	if ((id != TEMP54XX_EMIF1) && (id != TEMP54XX_EMIF2)) {
+	temp54xx_get_end: if ((id != TEMP54XX_EMIF1) && (id != TEMP54XX_EMIF2))
+	{
 		dprintf("%s(%s): temp is %d C\n", __func__,
-			temp54xx_name_get(id), temp);
-	} else {
+				temp54xx_name_get(id), temp);
+	}
+	else
+	{
 		dprintf("%s(%s): temp is %s\n", __func__,
-			temp54xx_name_get(id),
-			emif_mr4_convert(temp, TEMP_CELCIUS_DEGREES));
+				temp54xx_name_get(id),
+				emif_mr4_convert(temp, TEMP_CELCIUS_DEGREES));
 	}
 	return temp;
 }

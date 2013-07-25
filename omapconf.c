@@ -67,6 +67,7 @@
 #include <module.h>
 #include <powerdomain.h>
 #include <clockdomain.h>
+#include <stdbool.h>
 
 
 /* #define DEBUG */
@@ -905,6 +906,7 @@ int main(int argc, char *argv[])
 	char *prefix;
 	char *cfgfile;
 	int c;
+
 
 	cpu_found = 0;
 	ret = 0;

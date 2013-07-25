@@ -60,6 +60,7 @@
 #include <audit54xx.h>
 #include <ctrlmod54xx.h>
 #include <temp54xx.h>
+#include <hwtemp54xx.h>
 #include <hwobs54xx.h>
 #include <abb54xx.h>
 #include <emif54xx.h>
@@ -657,6 +658,19 @@ int main54xx_show(int argc, char *argv[])
 			return module_status_show(stdout);
 		else
 			return err_arg_too_many_msg_show(HELP_SOC_PWST);
+	} else if (strcmp(argv[0], "hwtemp") == 0) {
+		if (argc == 1) {
+			return hwtemp_sensor_show(stdout, "all");
+		} else if (argc == 2) {
+			if (strcmp(argv[1], "all") == 0)
+				return hwtemp_sensor_show(stdout, argv[1]);
+			else if (temp_sensor_is_available(argv[1]) != 0)
+				return hwtemp_sensor_show(stdout, argv[1]);
+			else
+				return err_arg_msg_show(HELP_TEMPERATURE);
+		} else {
+			return err_arg_too_many_msg_show(HELP_TEMPERATURE);
+		}
 	} else if (strcmp(argv[0], "temp") == 0) {
 		if (argc == 1) {
 			return temp_sensor_show(stdout, "all");
